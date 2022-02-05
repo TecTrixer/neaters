@@ -53,16 +53,16 @@ fn compute_fitness(res: Vec<f64>) -> f64 {
 
 ## Features
 
-- [] creating neural networks
-- [] storing and loading networks
-- [] creating a solver
-- [] storing and loading solver
-- [] compute() function for neural network
-- [] assign_fitness() function for neural network
-- [] new_generation() function for solver
-- [] average_fitness() function for solver
-- [] best_neural_network() function for solver
-- [] add advanced logging of stats to solver
+- [ ] creating neural networks
+- [ ] storing and loading networks
+- [ ] creating a solver
+- [ ] storing and loading solver
+- [ ] compute() function for neural network
+- [ ] assign_fitness() function for neural network
+- [ ] new_generation() function for solver
+- [ ] average_fitness() function for solver
+- [ ] best_neural_network() function for solver
+- [ ] add advanced logging of stats to solver
 
 ## Implementation
 
