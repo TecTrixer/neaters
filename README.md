@@ -53,8 +53,9 @@ fn compute_fitness(res: Vec<f64>) -> f64 {
 
 ## Features
 
-- [ ] creating neural networks
-- [ ] storing and loading networks
+- [x] creating neural networks
+- [x] storing and loading networks
+- [ ] handling errors with io in NeuralNetwork
 - [ ] creating a solver
 - [ ] storing and loading solver
 - [ ] compute() function for neural network
