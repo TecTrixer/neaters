@@ -56,11 +56,12 @@ impl Edge {
 pub struct NeuralNetwork {
     nodes: Vec<Node>,
     edges: Vec<Edge>,
+    pub id: usize,
 }
 
 impl NeuralNetwork {
-    pub fn new(input_nodes: usize, output_nodes: usize) -> Self {
-        // TODO: sanitize input (output_nodes = 0?)
+    // TODO: sanitize input (output_nodes = 0?)
+    pub fn with_size_and_id(input_nodes: usize, output_nodes: usize, id: usize) -> Self {
         let mut nodes = vec![];
         let mut edges = vec![];
         // creating input nodes + edges
@@ -77,7 +78,12 @@ impl NeuralNetwork {
         for i in (input_nodes + 1)..=(input_nodes + output_nodes) {
             nodes.push(Node::output_with_id(i));
         }
-        return NeuralNetwork { nodes, edges };
+        return NeuralNetwork { nodes, edges, id };
+    }
+
+    // TODO: sanitize input (output_nodes = 0?)
+    pub fn with_size(input_nodes: usize, output_nodes: usize) -> Self {
+        return NeuralNetwork::with_size_and_id(input_nodes, output_nodes, 0);
     }
 
     // NOTE: should this be public?
