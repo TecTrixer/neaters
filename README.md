@@ -59,7 +59,9 @@ fn compute_fitness(res: Vec<f64>) -> f64 {
 - [x] creating a solver
 - [x] storing and loading solver
 - [ ] handling errors with io in Solver
-- [ ] compute() function for neural network
+- [x] creating a phenotype
+- [x] compute() function for neural network
+- [ ] sanitizing input
 - [ ] assign_fitness() function for neural network
 - [ ] new_generation() function for solver
 - [ ] average_fitness() function for solver
