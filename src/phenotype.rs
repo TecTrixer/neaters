@@ -38,15 +38,15 @@ impl Phenotype {
         }
         let node_value_array: Vec<f32> = Vec::with_capacity(nn.nodes.len());
         let topo_order: Vec<usize> = Phenotype::create_topo_order(&edges, input_length);
-        return Phenotype {
+        Phenotype {
             edges,
             node_value_array,
             topo_order,
             outputs,
-        };
+        }
     }
 
-    fn create_topo_order(edges: &Vec<Vec<(usize, f32)>>, input_nodes: usize) -> Vec<usize> {
+    fn create_topo_order(edges: &[Vec<(usize, f32)>], input_nodes: usize) -> Vec<usize> {
         let mut stack: Vec<usize> = Vec::new();
         // add every input node (one more than input bc of the constant) to the stack for dfs
         for i in 0..=input_nodes {
@@ -59,7 +59,7 @@ impl Phenotype {
             order.push(0);
         }
         let mut idx: usize = edges.len() - 1;
-        while stack.len() > 0 {
+        while !stack.is_empty() {
             let elem = stack[stack.len() - 1];
             if visited[elem] {
                 stack.pop();
@@ -78,20 +78,18 @@ impl Phenotype {
                 }
             }
         }
-        return order;
+        order
     }
 
-    fn create_node_index_mapping(nodes: &Vec<Node>) -> FxHashMap<usize, usize> {
+    fn create_node_index_mapping(nodes: &[Node]) -> FxHashMap<usize, usize> {
         let mut map: FxHashMap<usize, usize> = FxHashMap::with_capacity_and_hasher(
             nodes.len(),
             BuildHasherDefault::<FxHasher>::default(),
         );
-        let mut idx: usize = 0;
-        for node in nodes {
+        for (idx, node) in nodes.iter().enumerate() {
             map.insert(idx, node.id);
-            idx += 1;
         }
-        return map;
+        map
     }
 
     pub fn compute(&mut self, inputs: Vec<f32>) -> Vec<f32> {
@@ -115,7 +113,7 @@ impl Phenotype {
         for o_idx in self.outputs.iter() {
             outputs.push(self.node_value_array[*o_idx]);
         }
-        return outputs;
+        outputs
     }
 
     pub fn reset(&mut self) {
@@ -125,5 +123,5 @@ impl Phenotype {
 
 // we can also choose another activation function
 pub fn sigmoid(x: f32) -> f32 {
-    return x / (1.0 + x.abs());
+    x / (1.0 + x.abs())
 }

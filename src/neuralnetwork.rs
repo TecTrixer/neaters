@@ -22,17 +22,17 @@ pub struct Node {
 impl Node {
     /// Constructor for an input node with the given id. Used to create node objects.
     fn input_with_id(id: usize) -> Self {
-        return Node {
+        Node {
             id,
             node_type: NodeType::Input,
-        };
+        }
     }
     /// Constructor for an output node with the given id. Used to create node objects.
     fn output_with_id(id: usize) -> Self {
-        return Node {
+        Node {
             id,
             node_type: NodeType::Output,
-        };
+        }
     }
 }
 
@@ -73,13 +73,13 @@ impl Edge {
     /// Constructor for creating a default edge with weight **1.0**. This edge is enabled and always
     /// has an innovation number of **0**.
     fn initial_from_to(from: usize, to: usize) -> Self {
-        return Edge {
+        Edge {
             from,
             to,
             weight: 1.0,
             enabled: true,
             innovation: 0,
-        };
+        }
     }
 }
 
@@ -136,13 +136,13 @@ impl NeuralNetwork {
         for i in (input_nodes + 1)..=(input_nodes + output_nodes) {
             nodes.push(Node::output_with_id(i));
         }
-        return NeuralNetwork {
+        NeuralNetwork {
             nodes,
             edges,
             id,
             size: (input_nodes, output_nodes),
             pt: None,
-        };
+        }
     }
 
     /// Constructor for a neural network with a given number of input nodes and output nodes.
@@ -152,7 +152,7 @@ impl NeuralNetwork {
     /// needed for that.
     // TODO: sanitize input (output_nodes = 0?)
     pub fn with_size(input_nodes: usize, output_nodes: usize) -> Self {
-        return NeuralNetwork::with_size_and_id(input_nodes, output_nodes, 0);
+        NeuralNetwork::with_size_and_id(input_nodes, output_nodes, 0)
     }
 
     /// Function for computing the output of the network with a given input.
@@ -178,13 +178,12 @@ impl NeuralNetwork {
     pub fn compute(&mut self, input: Vec<f32>) -> Vec<f32> {
         if let Some(pt) = &mut self.pt {
             pt.reset();
-            let res = pt.compute(input);
-            return res;
+            pt.compute(input)
         } else {
-            let mut pt = Phenotype::from_nn(&self);
+            let mut pt = Phenotype::from_nn(self);
             let res = pt.compute(input);
             self.pt = Some(pt);
-            return res;
+            res
         }
     }
 
@@ -198,7 +197,7 @@ impl NeuralNetwork {
             // TODO: add clean error handling
             Err(_) => Vec::new(),
         };
-        return encoded;
+        encoded
     }
 
     /// Saving the neural network at the specified address.
@@ -255,7 +254,7 @@ impl NeuralNetwork {
     // TODO: add compute usage example after compute functionality has been added.
     pub fn load_from(at: &str) -> Self {
         let bytes = NeuralNetwork::load_bytes_from(at);
-        return NeuralNetwork::create_from_bytes(bytes);
+        NeuralNetwork::create_from_bytes(bytes)
     }
 
     /// This function loads the raw bytes from a file at the speficied location. It should not be
@@ -268,12 +267,12 @@ impl NeuralNetwork {
         let mut buf_reader = BufReader::new(file);
         let mut buffer: Vec<u8> = Vec::new();
         buf_reader.read_to_end(&mut buffer).unwrap();
-        return buffer;
+        buffer
     }
 
     fn create_from_bytes(bytes: Vec<u8>) -> Self {
         // TODO: handle serialization errors
         let decoded: Self = bincode::deserialize(&bytes).unwrap();
-        return decoded;
+        decoded
     }
 }
