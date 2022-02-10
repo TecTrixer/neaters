@@ -6,7 +6,7 @@ use std::io::{BufReader, Read, Write};
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct Node {
     pub id: usize,
-    node_type: NodeType,
+    pub node_type: NodeType,
 }
 
 impl Node {
@@ -25,7 +25,7 @@ impl Node {
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-enum NodeType {
+pub enum NodeType {
     Input,
     Hidden,
     Output,

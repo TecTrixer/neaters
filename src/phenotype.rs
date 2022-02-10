@@ -1,4 +1,5 @@
 use crate::neuralnetwork::Node;
+use crate::neuralnetwork::NodeType;
 use crate::NeuralNetwork;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::hash::BuildHasherDefault;
@@ -6,16 +7,29 @@ use std::hash::BuildHasherDefault;
 pub struct Phenotype {
     edges: Vec<Vec<(usize, f32)>>,
     node_index_map: FxHashMap<usize, usize>,
-    node_value_array: Vec<f32>,
+    pub node_value_array: Vec<f32>,
     pub topo_order: Vec<usize>,
+    outputs: Vec<usize>,
 }
 
 impl Phenotype {
-    pub fn from_nn_with_input(nn: NeuralNetwork, inputs: Vec<f32>) -> Self {
+    pub fn from_nn_with_in_and_out_len(
+        nn: NeuralNetwork,
+        input_length: usize,
+        output_length: usize,
+    ) -> Self {
         let node_index_map = Phenotype::create_node_index_mapping(&nn.nodes);
         let mut edges: Vec<Vec<(usize, f32)>> = Vec::with_capacity(nn.nodes.len());
         for _ in 0..nn.nodes.len() {
             edges.push(Vec::new());
+        }
+        let mut outputs: Vec<usize> = Vec::with_capacity(output_length);
+        for node in nn.nodes.iter() {
+            match node.node_type {
+                NodeType::Hidden => break,
+                NodeType::Output => outputs.push(*node_index_map.get(&node.id).unwrap()),
+                NodeType::Input => (),
+            }
         }
         for edge in nn.edges {
             let from = *node_index_map.get(&edge.from).unwrap();
@@ -24,13 +38,14 @@ impl Phenotype {
                 edges[from].push((to, edge.weight));
             }
         }
-        let mut node_value_array: Vec<f32> = Vec::with_capacity(nn.nodes.len());
-        let topo_order: Vec<usize> = Phenotype::create_topo_order(&edges, inputs.len());
+        let node_value_array: Vec<f32> = Vec::with_capacity(nn.nodes.len());
+        let topo_order: Vec<usize> = Phenotype::create_topo_order(&edges, input_length);
         return Phenotype {
             node_index_map,
             edges,
             node_value_array,
             topo_order,
+            outputs,
         };
     }
 
@@ -81,4 +96,33 @@ impl Phenotype {
         }
         return map;
     }
+
+    pub fn compute_with_output_length(&mut self, inputs: Vec<f32>) -> Vec<f32> {
+        let mut outputs: Vec<f32> = Vec::with_capacity(self.outputs.len());
+        self.node_value_array.push(1.0);
+        let input_length = inputs.len();
+        for input in inputs.into_iter() {
+            self.node_value_array.push(input);
+        }
+        for _ in (input_length + 1)..self.edges.len() {
+            self.node_value_array.push(0.0);
+        }
+        for node in self.topo_order.iter() {
+            for (to, weight) in self.edges[*node].iter() {
+                // NOTE: maybe this double sigmoid function is unnecessary
+                self.node_value_array[*to] = sigmoid(
+                    self.node_value_array[*to] + sigmoid(*weight * self.node_value_array[*node]),
+                );
+            }
+        }
+        for o_idx in self.outputs.iter() {
+            outputs.push(self.node_value_array[*o_idx]);
+        }
+        return outputs;
+    }
+}
+
+// we can also choose another activation function
+pub fn sigmoid(x: f32) -> f32 {
+    return x / (1.0 + x.abs());
 }
