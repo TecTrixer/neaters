@@ -1,8 +1,12 @@
 #[test]
 pub fn create_neural_network() {
     use crate::NeuralNetwork;
-    let _ = NeuralNetwork::with_size(1, 1);
-    // TODO: add some kind of assertion here
+    let nn = NeuralNetwork::with_size(1, 1);
+    assert_eq!(nn.nodes.len(), 3);
+    assert_eq!(nn.edges.len(), 2);
+    let nn = NeuralNetwork::with_size(4, 3);
+    assert_eq!(nn.nodes.len(), 8);
+    assert_eq!(nn.edges.len(), 15);
 }
 
 #[test]
@@ -92,4 +96,18 @@ pub fn save_and_load_solver() {
 
     // if this fails, then the file could not be deleted correctly
     dir.close().unwrap();
+}
+
+#[test]
+pub fn create_phenotype() {
+    use crate::phenotype::Phenotype;
+    use crate::NeuralNetwork;
+    // creating network
+    let nn = NeuralNetwork::with_size(3, 2);
+    // creating phenotype from network with some placeholder inputs
+    let pt = Phenotype::from_nn_with_input(nn, vec![0.3, 0.6, 0.9]);
+    // checking topological order
+    // NOTE: every order where (0, 1, 2, 3) are before (4, 5) is acceptable, so if this test fails,
+    // you may adjust it
+    assert_eq!(pt.topo_order, vec![0, 1, 2, 3, 4, 5]);
 }

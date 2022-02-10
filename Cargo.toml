@@ -15,6 +15,7 @@ categories = ["science", "algorithms"]
 # TODO: decide on a semver strategie: fixed or open to updates?
 bincode = "1.3.3"
 serde = {version = "1.0.136", features = ["derive"]}
+rustc-hash = "1.1.0"
 
 [dev-dependencies]
 tempfile = "3.3.0"

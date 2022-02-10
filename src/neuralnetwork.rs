@@ -4,8 +4,8 @@ use std::fs::OpenOptions;
 use std::io::{BufReader, Read, Write};
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
-struct Node {
-    id: usize,
+pub struct Node {
+    pub id: usize,
     node_type: NodeType,
 }
 
@@ -32,11 +32,11 @@ enum NodeType {
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-struct Edge {
-    from: usize,
-    to: usize,
-    weight: f32,
-    enabled: bool,
+pub struct Edge {
+    pub from: usize,
+    pub to: usize,
+    pub weight: f32,
+    pub enabled: bool,
     innovation: usize,
 }
 
@@ -54,16 +54,16 @@ impl Edge {
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct NeuralNetwork {
-    nodes: Vec<Node>,
-    edges: Vec<Edge>,
+    pub nodes: Vec<Node>,
+    pub edges: Vec<Edge>,
     pub id: usize,
 }
 
 impl NeuralNetwork {
     // TODO: sanitize input (output_nodes = 0?)
     pub fn with_size_and_id(input_nodes: usize, output_nodes: usize, id: usize) -> Self {
-        let mut nodes = vec![];
-        let mut edges = vec![];
+        let mut nodes = Vec::with_capacity(input_nodes + 1);
+        let mut edges = Vec::with_capacity((input_nodes + 1) * output_nodes);
         // creating input nodes + edges
         // it also creates a default input node with its input as a constant 1.0
         for i in 0..=input_nodes {
@@ -92,7 +92,7 @@ impl NeuralNetwork {
         let encoded: Vec<u8> = match bincode::serialize(&self) {
             Ok(bytes) => bytes,
             // TODO: add clean error handling
-            Err(_) => vec![],
+            Err(_) => Vec::new(),
         };
         return encoded;
     }
