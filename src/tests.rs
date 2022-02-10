@@ -105,7 +105,7 @@ pub fn create_phenotype() {
     // creating network
     let nn = NeuralNetwork::with_size(3, 2);
     // creating phenotype from network with some placeholder inputs
-    let pt = Phenotype::from_nn_with_in_and_out_len(nn, 3, 2);
+    let pt = Phenotype::from_nn(&nn);
     // checking topological order
     // NOTE: every order where (0, 1, 2, 3) are before (4, 5) is acceptable, so if this test fails,
     // you may adjust it
@@ -119,8 +119,21 @@ pub fn compute_with_phenotype() {
     // creating network
     let nn = NeuralNetwork::with_size(1, 1);
     // creating phenotype from network with some placeholder inputs
-    let mut pt = Phenotype::from_nn_with_in_and_out_len(nn, 1, 1);
-    let res = pt.compute_with_output_length(vec![0.5]);
+    let mut pt = Phenotype::from_nn(&nn);
+    let res = pt.compute(vec![0.5]);
     assert_eq!(pt.node_value_array, vec![1.0, 0.5, 0.4]);
     assert_eq!(res, vec![0.4]);
+}
+
+#[test]
+pub fn compute() {
+    use crate::NeuralNetwork;
+    let mut nn = NeuralNetwork::with_size(1, 1);
+    let res = nn.compute(vec![0.5]);
+    assert_eq!(res, vec![0.4]);
+    let mut nn2 = NeuralNetwork::with_size(2, 3);
+    let res2 = nn2.compute(vec![0.5, 1.5]);
+    assert_eq!(res2, vec![0.5, 0.5, 0.5]);
+    let res3 = nn2.compute(vec![0.5, 1.5]);
+    assert_eq!(res3, vec![0.5, 0.5, 0.5]);
 }

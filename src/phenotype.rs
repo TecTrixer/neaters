@@ -4,6 +4,7 @@ use crate::NeuralNetwork;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::hash::BuildHasherDefault;
 
+#[derive(Debug, PartialEq)]
 pub struct Phenotype {
     edges: Vec<Vec<(usize, f32)>>,
     pub node_value_array: Vec<f32>,
@@ -12,11 +13,9 @@ pub struct Phenotype {
 }
 
 impl Phenotype {
-    pub fn from_nn_with_in_and_out_len(
-        nn: NeuralNetwork,
-        input_length: usize,
-        output_length: usize,
-    ) -> Self {
+    pub fn from_nn(nn: &NeuralNetwork) -> Self {
+        let input_length = nn.size.0;
+        let output_length = nn.size.1;
         let node_index_map = Phenotype::create_node_index_mapping(&nn.nodes);
         let mut edges: Vec<Vec<(usize, f32)>> = Vec::with_capacity(nn.nodes.len());
         for _ in 0..nn.nodes.len() {
@@ -30,7 +29,7 @@ impl Phenotype {
                 NodeType::Input => (),
             }
         }
-        for edge in nn.edges {
+        for edge in nn.edges.iter() {
             let from = *node_index_map.get(&edge.from).unwrap();
             let to = *node_index_map.get(&edge.to).unwrap();
             if edge.enabled {
@@ -95,7 +94,7 @@ impl Phenotype {
         return map;
     }
 
-    pub fn compute_with_output_length(&mut self, inputs: Vec<f32>) -> Vec<f32> {
+    pub fn compute(&mut self, inputs: Vec<f32>) -> Vec<f32> {
         let mut outputs: Vec<f32> = Vec::with_capacity(self.outputs.len());
         self.node_value_array.push(1.0);
         let input_length = inputs.len();
@@ -117,6 +116,10 @@ impl Phenotype {
             outputs.push(self.node_value_array[*o_idx]);
         }
         return outputs;
+    }
+
+    pub fn reset(&mut self) {
+        self.node_value_array.clear();
     }
 }
 

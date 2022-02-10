@@ -1,8 +1,8 @@
+use crate::phenotype::Phenotype;
 use bincode;
 use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::{BufReader, Read, Write};
-
 /// Represents a node in the neural network with a specific id and a type (either Input, Hidden or
 /// Output).
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
@@ -100,6 +100,12 @@ pub struct NeuralNetwork {
     /// The id of the network is being used to identify the network within the solver, so an
     /// individual fitness value can be assigned to the exact network.
     pub id: usize,
+    /// The size of the network, the first part is the number of input nodes and the second part is
+    /// the number of output nodes.
+    pub size: (usize, usize),
+    // optionally store the phenotype if needed for multiple computations
+    #[serde(skip)]
+    pt: Option<Phenotype>,
 }
 
 impl NeuralNetwork {
@@ -130,7 +136,13 @@ impl NeuralNetwork {
         for i in (input_nodes + 1)..=(input_nodes + output_nodes) {
             nodes.push(Node::output_with_id(i));
         }
-        return NeuralNetwork { nodes, edges, id };
+        return NeuralNetwork {
+            nodes,
+            edges,
+            id,
+            size: (input_nodes, output_nodes),
+            pt: None,
+        };
     }
 
     /// Constructor for a neural network with a given number of input nodes and output nodes.
@@ -141,6 +153,39 @@ impl NeuralNetwork {
     // TODO: sanitize input (output_nodes = 0?)
     pub fn with_size(input_nodes: usize, output_nodes: usize) -> Self {
         return NeuralNetwork::with_size_and_id(input_nodes, output_nodes, 0);
+    }
+
+    /// Function for computing the output of the network with a given input.
+    ///
+    /// Use this function to get the result from the network by giving it a `f32` for every input
+    /// node you specified (with the number of input nodes when creating).
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// use neaters::NeuralNetwork;
+    /// // Creating a neural net with one input and one output.
+    /// let mut nn = NeuralNetwork::with_size(1, 1);
+    /// // Compute the result with an input for the first (and only) node of 0.5
+    /// let res: Vec<f32> = nn.compute(vec![0.5]);
+    /// // For the default neural net without training the output should be 0.4 (depends on the sigmoid function)
+    /// assert_eq!(res, vec![0.4]);
+    /// ```
+    ///
+    /// This function creates a phenotype to then compute the result and automatically caches it so
+    /// it does not need to be created again.
+    // TODO: sanitize input (length of input correct?)
+    pub fn compute(&mut self, input: Vec<f32>) -> Vec<f32> {
+        if let Some(pt) = &mut self.pt {
+            pt.reset();
+            let res = pt.compute(input);
+            return res;
+        } else {
+            let mut pt = Phenotype::from_nn(&self);
+            let res = pt.compute(input);
+            self.pt = Some(pt);
+            return res;
+        }
     }
 
     /// Returning the encoded byte representation of the neural network. This function is needed in
