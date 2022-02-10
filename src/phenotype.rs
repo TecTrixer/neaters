@@ -6,7 +6,6 @@ use std::hash::BuildHasherDefault;
 
 pub struct Phenotype {
     edges: Vec<Vec<(usize, f32)>>,
-    node_index_map: FxHashMap<usize, usize>,
     pub node_value_array: Vec<f32>,
     pub topo_order: Vec<usize>,
     outputs: Vec<usize>,
@@ -41,7 +40,6 @@ impl Phenotype {
         let node_value_array: Vec<f32> = Vec::with_capacity(nn.nodes.len());
         let topo_order: Vec<usize> = Phenotype::create_topo_order(&edges, input_length);
         return Phenotype {
-            node_index_map,
             edges,
             node_value_array,
             topo_order,
