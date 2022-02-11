@@ -1,5 +1,8 @@
 # NEATeRS
 
+![ci-workflow](https://github.com/tectrixer/neaters/actions/workflows/workflow.yml/badge.svg)
+[![codecov](https://codecov.io/gh/tectrixer/neaters/branch/main/graph/badge.svg?token=E2F4O0D35A)](https://codecov.io/gh/tectrixer/neaters)
+
 **NEATeRS** is a library for training a genetic neural net through reinforcement learning.
 
 It uses the **NEAT** algorithm developed by Ken Stanley which enables the neural net to evolve its own topology. As a result it is not necessary to know the right amount of hidden nodes as the algorithm adds them as needed using evolution with mutation. However it will also take longer to fit to a solution as it does not use prior data and it does not improve the network with backpropagation.
