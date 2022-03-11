@@ -120,7 +120,7 @@ impl NeuralNetwork {
     /// to create a network which can compute an output.
     // TODO: sanitize input (output_nodes = 0?)
     pub fn with_size_and_id(input_nodes: usize, output_nodes: usize, id: usize) -> Self {
-        let mut nodes = Vec::with_capacity(input_nodes + 1);
+        let mut nodes = Vec::with_capacity(input_nodes + 1 + output_nodes);
         let mut edges = Vec::with_capacity((input_nodes + 1) * output_nodes);
         // creating input nodes + edges
         // it also creates a default input node with its input as a constant 1.0
@@ -169,7 +169,7 @@ impl NeuralNetwork {
     /// // Compute the result with an input for the first (and only) node of 0.5
     /// let res: Vec<f32> = nn.compute(vec![0.5]);
     /// // For the default neural net without training the output should be 0.4 (depends on the sigmoid function)
-    /// assert_eq!(res, vec![0.4]);
+    /// assert_eq!(res, vec![0.45454547]);
     /// ```
     ///
     /// This function creates a phenotype to then compute the result and automatically caches it so

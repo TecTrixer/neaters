@@ -103,11 +103,9 @@ impl Phenotype {
             self.node_value_array.push(0.0);
         }
         for node in self.topo_order.iter() {
+            self.node_value_array[*node] = sigmoid(self.node_value_array[*node]);
             for (to, weight) in self.edges[*node].iter() {
-                // NOTE: maybe this double sigmoid function is unnecessary
-                self.node_value_array[*to] = sigmoid(
-                    self.node_value_array[*to] + sigmoid(*weight * self.node_value_array[*node]),
-                );
+                self.node_value_array[*to] += *weight * self.node_value_array[*node];
             }
         }
         for o_idx in self.outputs.iter() {

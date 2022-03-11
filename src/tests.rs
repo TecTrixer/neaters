@@ -121,8 +121,8 @@ pub fn compute_with_phenotype() {
     // creating phenotype from network with some placeholder inputs
     let mut pt = Phenotype::from_nn(&nn);
     let res = pt.compute(vec![0.5]);
-    assert_eq!(pt.node_value_array, vec![1.0, 0.5, 0.4]);
-    assert_eq!(res, vec![0.4]);
+    assert_eq!(pt.node_value_array, vec![0.5, 0.33333334, 0.45454547]);
+    assert_eq!(res, vec![0.45454547]);
 }
 
 #[test]
@@ -130,10 +130,10 @@ pub fn compute() {
     use crate::NeuralNetwork;
     let mut nn = NeuralNetwork::with_size(1, 1);
     let res = nn.compute(vec![0.5]);
-    assert_eq!(res, vec![0.4]);
+    assert_eq!(res, vec![0.45454547]);
     let mut nn2 = NeuralNetwork::with_size(2, 3);
     let res2 = nn2.compute(vec![0.5, 1.5]);
-    assert_eq!(res2, vec![0.5, 0.5, 0.5]);
+    assert_eq!(res2, vec![0.5890411, 0.5890411, 0.5890411]);
     let res3 = nn2.compute(vec![0.5, 1.5]);
-    assert_eq!(res3, vec![0.5, 0.5, 0.5]);
+    assert_eq!(res3, vec![0.5890411, 0.5890411, 0.5890411]);
 }
