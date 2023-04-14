@@ -64,9 +64,7 @@ impl Phenotype {
             if visited[elem] {
                 stack.pop();
                 order[idx] = elem;
-                if idx > 0 {
-                    idx -= 1;
-                }
+                idx = idx.saturating_sub(1);
                 continue;
             } else {
                 visited[elem] = true;
