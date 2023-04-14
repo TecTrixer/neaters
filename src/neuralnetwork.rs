@@ -5,7 +5,7 @@ use std::fs::OpenOptions;
 use std::io::{BufReader, Read, Write};
 /// Represents a node in the neural network with a specific id and a type (either Input, Hidden or
 /// Output).
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize, Clone, Copy)]
 pub struct Node {
     /// The id of the node, needed to transform the network into its phenotype to compute the
     /// output.
@@ -37,7 +37,7 @@ impl Node {
 }
 
 /// type of a node, one of Input, Hidden, Output
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Clone, Copy)]
 pub enum NodeType {
     /// Type of a node whose value is being set at the start of the computation. Their number is
     /// set at the creation of a neural network and cannot be changed.
@@ -52,7 +52,7 @@ pub enum NodeType {
 
 /// Struct used to represent an edge in the neural network. Is converted to an adjacency list in
 /// the phenotype representation.
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Copy, Clone)]
 pub struct Edge {
     /// The id of the source node to which the edge origin is connected.
     pub from: usize,
@@ -89,7 +89,7 @@ impl Edge {
 /// This is the main object which is being trained. After the trainging you can extract the best
 /// instance from the solver. The solver is the only structure more high level than the neural
 /// network.
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Clone)]
 pub struct NeuralNetwork {
     /// Storing a list of all nodes with their id's and their node types (Input, Hidden, Output).
     pub nodes: Vec<Node>,
@@ -103,6 +103,8 @@ pub struct NeuralNetwork {
     /// The size of the network, the first part is the number of input nodes and the second part is
     /// the number of output nodes.
     pub size: (usize, usize),
+    /// The fitness of the network, higher means better and its initial value is `f32::MIN`.
+    pub fitness: f32,
     // optionally store the phenotype if needed for multiple computations
     #[serde(skip)]
     pt: Option<Phenotype>,
@@ -141,6 +143,7 @@ impl NeuralNetwork {
             edges,
             id,
             size: (input_nodes, output_nodes),
+            fitness: f32::MIN,
             pt: None,
         }
     }
@@ -268,6 +271,11 @@ impl NeuralNetwork {
         let mut buffer: Vec<u8> = Vec::new();
         buf_reader.read_to_end(&mut buffer).unwrap();
         buffer
+    }
+
+    /// Assign a fitness to this neural network.
+    pub fn assign_fitness(&mut self, f: f32) {
+        self.fitness = f;
     }
 
     fn create_from_bytes(bytes: Vec<u8>) -> Self {
