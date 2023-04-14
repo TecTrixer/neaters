@@ -5,7 +5,7 @@ use rustc_hash::{FxHashMap, FxHasher};
 use std::hash::BuildHasherDefault;
 
 /// Graph representation of NeuralNetwork, used to compute its output.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Phenotype {
     /// EdgeList with the destination and the weight of each edge for each node.
     edges: Vec<Vec<(usize, f32)>>,

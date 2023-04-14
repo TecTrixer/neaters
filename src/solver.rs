@@ -2,20 +2,22 @@ use crate::neuralnetwork::NeuralNetwork;
 use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::{BufReader, Read, Write};
+use std::slice::IterMut;
 
 /// This is the main struct being used to train a network for a specific problem.
 ///
 /// It contains multiple neural networks which it trains in multiple generations to get better.
-/// You should be able to train a network by only interacting with this object and the contained
-/// NeuralNetwork objects you can obtain by calling `solver.neural_nets()`.
+/// You should be able to train a network by only interacting with this object. You can obtain the contained
+/// NeuralNetwork objects by calling `solver.neural_nets()`.
 // TODO: add usage example in here.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Solver {
     networks: Vec<NeuralNetwork>,
     network_size: (usize, usize),
     generation_size: usize,
-    fitness: Vec<f32>,
     generation: usize,
+    species: Vec<Species>,
+    distance_threshold: f32,
 }
 
 impl Solver {
@@ -43,13 +45,21 @@ impl Solver {
                 i,
             ));
         }
-        let fitness: Vec<f32> = Vec::with_capacity(generation_size);
+        let mut species = Vec::new();
+        species.push(Species::new_with_network(NeuralNetwork::with_size(
+            input_nodes,
+            output_nodes,
+        )));
+
+        // TODO: make this variable configurable
+        let distance_threshold = 1.0;
         Solver {
             networks,
             network_size: (input_nodes, output_nodes),
             generation_size,
-            fitness,
             generation: 0,
+            species,
+            distance_threshold,
         }
     }
 
@@ -141,9 +151,125 @@ impl Solver {
         buffer
     }
 
+    /// This function computes the average fitness of a generation and returns it.
+    ///
+    /// To have a useful result the fitness of each network must have been computed before.
+    pub fn average_fitness(&mut self) -> f32 {
+        let sum: f32 = self.networks.iter().fold(0.0, |a, x| a + x.fitness);
+        sum / self.generation_size as f32
+    }
+
+    /// This function gives an iterator over all neural networks in one generation. It can be used
+    /// to retrieve the networks for manual training.
+    ///
+    /// # Example
+    /// ```rust
+    /// use neaters::Solver;
+    /// let mut solver = Solver::with_size(1,1,1);
+    /// for nn in solver.neural_nets() {
+    ///     // Get result based on some input values (0.1)
+    ///     let result = nn.compute([0.1].to_vec())[0];
+    ///     // Should compute fitness based on result
+    ///     let fitness = 1.5;
+    /// }
+    /// ```
+    pub fn neural_nets(&mut self) -> IterMut<NeuralNetwork> {
+        self.networks.iter_mut()
+    }
+
+    /// Returns the best network of one generation to use.
+    ///
+    /// Note that this function should not be used multiple times as it is costly and could hurt
+    /// performance.
+    pub fn best_network(&mut self) -> NeuralNetwork {
+        self.networks
+            .clone()
+            .into_iter()
+            .fold(NeuralNetwork::with_size(0, 0), |a, x| {
+                if a.fitness <= x.fitness {
+                    x
+                } else {
+                    a
+                }
+            })
+    }
+
+    /// Create a new generation through speciation, mutation and ?
+    ///
+    /// 1. group networks by distance threshold (need distance function)
+    /// 2. adjust distance threshold for next generation
+    /// 3. compute adjusted fitness values
+    /// 4. eliminate lower part of each group (proportional to sum of adjusted fitness of one group)
+    /// 5. crossover between two networks
+    /// 6. mutate them (disable Connection, change connection weight, add connection, ... Node ...)
+    pub fn new_generation(&mut self) {
+        self.clear_species();
+        self.group_networks();
+        self.remove_unused_species();
+    }
+
     fn create_from_bytes(bytes: Vec<u8>) -> Self {
         // TODO: handle serialization errors
         let decoded: Self = bincode::deserialize(&bytes).unwrap();
         decoded
+    }
+
+    /// Group networks into their species
+    fn group_networks(&mut self) {
+        'outer: for network in self.networks.iter() {
+            for species in self.species.iter_mut() {
+                let dist = Solver::distance(&species.representative, network);
+                if dist <= self.distance_threshold {
+                    species.members.push(network.id);
+                    continue 'outer;
+                }
+            }
+            self.species
+                .push(Species::new_with_network(network.clone()));
+        }
+    }
+
+    /// Compute distance between two networks
+    fn distance(representative: &NeuralNetwork, network: &NeuralNetwork) -> f32 {
+        todo!()
+    }
+
+    fn clear_species(&mut self) {
+        for species in self.species.iter_mut() {
+            species.clear();
+        }
+    }
+
+    fn remove_unused_species(&mut self) {
+        let mut i = 0;
+        while i < self.species.len() {
+            if self.species[i].is_unused() {
+                self.species.swap_remove(i);
+            } else {
+                i += 1;
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct Species {
+    representative: NeuralNetwork,
+    members: Vec<usize>,
+}
+
+impl Species {
+    fn new_with_network(nn: NeuralNetwork) -> Self {
+        Species {
+            members: [nn.id].to_vec(),
+            representative: nn,
+        }
+    }
+    fn clear(&mut self) {
+        self.members.clear();
+    }
+
+    fn is_unused(&self) -> bool {
+        self.members.is_empty()
     }
 }
