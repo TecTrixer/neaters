@@ -66,19 +66,18 @@ pub struct Edge {
     pub enabled: bool,
     /// The innovation number being used by the evolution algorithm to make an efficient merge of
     /// two networks possible.
-    innovation: usize,
+    pub innovation: usize,
 }
 
 impl Edge {
-    /// Constructor for creating a default edge with weight **1.0**. This edge is enabled and always
-    /// has an innovation number of **0**.
-    fn initial_from_to(from: usize, to: usize) -> Self {
+    /// Constructor for creating a default edge with weight **1.0**. This edge is always enabled.
+    fn initial_from_to(from: usize, to: usize, inno_number: usize) -> Self {
         Edge {
             from,
             to,
             weight: 1.0,
             enabled: true,
-            innovation: 0,
+            innovation: inno_number,
         }
     }
 }
@@ -110,6 +109,13 @@ pub struct NeuralNetwork {
     pt: Option<Phenotype>,
 }
 
+// Ordering networks by their fitness
+impl PartialOrd for NeuralNetwork {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.fitness.total_cmp(&other.fitness))
+    }
+}
+
 impl NeuralNetwork {
     /// Constructor for a neural network with a given number of input nodes, output nodes and a
     /// given id.
@@ -126,12 +132,14 @@ impl NeuralNetwork {
         let mut edges = Vec::with_capacity((input_nodes + 1) * output_nodes);
         // creating input nodes + edges
         // it also creates a default input node with its input as a constant 1.0
+        let mut inno_number = 0;
         for i in 0..=input_nodes {
             // add input node
             nodes.push(Node::input_with_id(i));
             // for this input node add a default edge with weight 1.0 to every output node
             for j in (input_nodes + 1)..=(input_nodes + output_nodes) {
-                edges.push(Edge::initial_from_to(i, j));
+                edges.push(Edge::initial_from_to(i, j, inno_number));
+                inno_number += 1;
             }
         }
         // add output nodes

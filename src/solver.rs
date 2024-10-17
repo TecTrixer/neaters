@@ -1,4 +1,6 @@
+use crate::config::Config;
 use crate::neuralnetwork::NeuralNetwork;
+use crate::species::Species;
 use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::{BufReader, Read, Write};
@@ -18,6 +20,7 @@ pub struct Solver {
     generation: usize,
     species: Vec<Species>,
     distance_threshold: f32,
+    config: Config,
 }
 
 impl Solver {
@@ -45,14 +48,14 @@ impl Solver {
                 i,
             ));
         }
-        let mut species = Vec::new();
-        species.push(Species::new_with_network(NeuralNetwork::with_size(
+        let species = vec![Species::new_with_network(NeuralNetwork::with_size(
             input_nodes,
             output_nodes,
-        )));
+        ))];
 
         // TODO: make this variable configurable
         let distance_threshold = 1.0;
+        let config = Config::default();
         Solver {
             networks,
             network_size: (input_nodes, output_nodes),
@@ -60,6 +63,7 @@ impl Solver {
             generation: 0,
             species,
             distance_threshold,
+            config,
         }
     }
 
@@ -179,19 +183,14 @@ impl Solver {
 
     /// Returns the best network of one generation to use.
     ///
-    /// Note that this function should not be used multiple times as it is costly and could hurt
+    /// Note that this function should not be used multiple times as it creates a new NeuralNetwork and could hurt
     /// performance.
     pub fn best_network(&mut self) -> NeuralNetwork {
         self.networks
+            .iter()
+            .reduce(|a, b| if a > b { a } else { b })
+            .unwrap()
             .clone()
-            .into_iter()
-            .fold(NeuralNetwork::with_size(0, 0), |a, x| {
-                if a.fitness <= x.fitness {
-                    x
-                } else {
-                    a
-                }
-            })
     }
 
     /// Create a new generation through speciation, mutation and ?
@@ -202,10 +201,29 @@ impl Solver {
     /// 4. eliminate lower part of each group (proportional to sum of adjusted fitness of one group)
     /// 5. crossover between two networks
     /// 6. mutate them (disable Connection, change connection weight, add connection, ... Node ...)
+    // TODO: move steps in to their own functions
     pub fn new_generation(&mut self) {
+        // 1. group networks by distance threshold
         self.clear_species();
         self.group_networks();
         self.remove_unused_species();
+
+        // 2. TODO: adjust distance threshold for next generation
+
+        // 3. compute adjusted fitness values
+        // TODO: could be more efficient using binary search
+        for species in self.species.iter() {
+            let n = species.members.len() as f32;
+            for &network_id in species.members.iter() {
+                self.networks
+                    .iter_mut()
+                    .find(|x| x.id == network_id)
+                    .unwrap()
+                    .fitness /= n;
+            }
+        }
+
+        // 4. eliminate lower part of each group
     }
 
     fn create_from_bytes(bytes: Vec<u8>) -> Self {
@@ -218,7 +236,7 @@ impl Solver {
     fn group_networks(&mut self) {
         'outer: for network in self.networks.iter() {
             for species in self.species.iter_mut() {
-                let dist = Solver::distance(&species.representative, network);
+                let dist = Solver::distance(&species.representative, network, &self.config);
                 if dist <= self.distance_threshold {
                     species.members.push(network.id);
                     continue 'outer;
@@ -230,10 +248,40 @@ impl Solver {
     }
 
     /// Compute distance between two networks
-    fn distance(representative: &NeuralNetwork, network: &NeuralNetwork) -> f32 {
-        todo!()
+    /// Needs the edge lists to be sorted by innovation number
+    fn distance(a: &NeuralNetwork, b: &NeuralNetwork, config: &Config) -> f32 {
+        // iterate through both edge lists and stop when one is finished
+        let mut disjoint = 0;
+        let mut a_pointer = 0;
+        let mut b_pointer = 0;
+        let mut weight_diff = 0.0;
+        while a_pointer < a.edges.len() && b_pointer < b.edges.len() {
+            let a_inno = a.edges[a_pointer].innovation;
+            let b_inno = b.edges[b_pointer].innovation;
+            match a_inno.cmp(&b_inno) {
+                std::cmp::Ordering::Less => {
+                    a_pointer += 1;
+                    disjoint += 1;
+                }
+                std::cmp::Ordering::Equal => {
+                    a_pointer += 1;
+                    b_pointer += 1;
+                    weight_diff += f32::abs(a.edges[a_pointer].weight - b.edges[b_pointer].weight);
+                }
+                std::cmp::Ordering::Greater => {
+                    b_pointer += 1;
+                    disjoint += 1;
+                }
+            }
+        }
+        let excess = a_pointer.abs_diff(b_pointer);
+        let n = usize::max(a.edges.len(), b.edges.len()) as f32;
+        config.c1 * (excess as f32) / n
+            + config.c2 * (disjoint as f32) / n
+            + config.c3 * weight_diff
     }
 
+    /// Resetting the species
     fn clear_species(&mut self) {
         for species in self.species.iter_mut() {
             species.clear();
@@ -249,27 +297,5 @@ impl Solver {
                 i += 1;
             }
         }
-    }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-struct Species {
-    representative: NeuralNetwork,
-    members: Vec<usize>,
-}
-
-impl Species {
-    fn new_with_network(nn: NeuralNetwork) -> Self {
-        Species {
-            members: [nn.id].to_vec(),
-            representative: nn,
-        }
-    }
-    fn clear(&mut self) {
-        self.members.clear();
-    }
-
-    fn is_unused(&self) -> bool {
-        self.members.is_empty()
     }
 }
